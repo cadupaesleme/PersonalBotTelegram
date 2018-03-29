@@ -34,7 +34,8 @@ namespace PersonalBotTelegram
                 }
                 else
                 {
-                    Bot.SendTextMessageAsync(e.Message.Chat.Id, "Não entendi, tudo bem com vc? Vamos malhar ?" + e.Message.Chat.Username);
+                    Bot.SendTextMessageAsync(e.Message.Chat.Id, "Eu te amo leo - Eu sou seu Robin" + e.Message.Chat.Username);
+                    //Bot.SendTextMessageAsync(e.Message.Chat.Id, "Não entendi, tudo bem com vc? Vamos malhar ?" + e.Message.Chat.Username);
                 }
             }
         }

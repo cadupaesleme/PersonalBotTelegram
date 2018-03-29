@@ -5,6 +5,11 @@ VisualStudioVersion = 15.0.27428.2015
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PersonalBotTelegram", "PersonalBotTelegram\PersonalBotTelegram.csproj", "{4ED9DD22-16E4-42D2-817A-BC07AD409B74}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentos", "Documentos", "{FF6BD20E-6388-42A7-807A-C5D92D28B461}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\..\Desktop\PersonalBot.xml = ..\..\..\Desktop\PersonalBot.xml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
