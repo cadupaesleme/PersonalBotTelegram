@@ -29,12 +29,12 @@ namespace PersonalBotTelegram
             {
                 if (e.Message.Text .ToLower() == "oi" || e.Message.Text.ToLower() == "/start")
                 {
-                    Bot.SendTextMessageAsync(e.Message.Chat.Id, "Olá, tudo bem com vc? Vamos malhar ?" + e.Message.Chat.FirstName);
+                    Bot.SendTextMessageAsync(e.Message.Chat.Id, "Olá, tudo bem " + e.Message.Chat.FirstName + " ? Vamos malhar ?");
 
                 }
                 else
                 {
-                    Bot.SendTextMessageAsync(e.Message.Chat.Id, "Não entendi, tudo bem com vc? Vamos malhar ?" + e.Message.Chat.FirstName);
+                    Bot.SendTextMessageAsync(e.Message.Chat.Id, "Não entendi " + e.Message.Chat.FirstName + ". Pode repetir por favor ?");
                 }
             }
         }
