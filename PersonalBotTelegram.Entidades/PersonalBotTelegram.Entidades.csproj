@@ -42,6 +42,9 @@
   <ItemGroup>
     <Compile Include="Aparelho.cs" />
     <Compile Include="Atividade.cs" />
+    <Compile Include="BotComando.cs" />
+    <Compile Include="BotOpcoes.cs" />
+    <Compile Include="BotOrquestrador.cs" />
     <Compile Include="ITreino.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TreinoFrango.cs" />

@@ -55,5 +55,11 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PersonalBotTelegram.Entidades\PersonalBotTelegram.Entidades.csproj">
+      <Project>{915B669F-358B-494C-BAD5-0B3ACF01C7B5}</Project>
+      <Name>PersonalBotTelegram.Entidades</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
