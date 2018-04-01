@@ -16,6 +16,11 @@ namespace PersonalBotTelegram
     {
         private static readonly TelegramBotClient Bot = new TelegramBotClient("581796064:AAEN11t28iX4yJvnNs1aBY86Cejjed9i2dM");
         private static BotOrquestrador BotStatus = new BotOrquestrador();
+        public static bool noTreino = false;
+        public static int qtdTreino = 0;
+        public static int MaxqtdTreino = 0;
+        public static string TreinoAtivo = "";
+
 
         static void Main(string[] args)
         {
@@ -44,34 +49,151 @@ namespace PersonalBotTelegram
             //verifica se a mensagem é texto
             if (mensagem == null || mensagem.Type != MessageType.TextMessage) return;
 
+            ReplyKeyboardMarkup ReplyKeyboard = new ReplyKeyboardMarkup();
             //await Bot.SendTextMessageAsync(e.Message.Chat.Id, BotStatus.Etapa);
 
-            string p = Conversa.MapaPergunta();
 
-            ReplyKeyboardMarkup ReplyKeyboard = new ReplyKeyboardMarkup();
-            if (p == Conversa.GetPergunta(-1))
+            if (!noTreino)
             {
-                //resposta invalida
-                await Bot.SendTextMessageAsync(
-                       mensagem.Chat.Id,
-                       p,
-                       replyMarkup: new ReplyKeyboardRemove());
+                string p = Conversa.MapaPergunta();
+                if (p == Conversa.GetPergunta(-1))
+                {
+                    //resposta invalida
+                    await Bot.SendTextMessageAsync(
+                           mensagem.Chat.Id,
+                           p,
+                           replyMarkup: new ReplyKeyboardRemove());
 
-                p = Conversa.UltimaPergunta();
-            }
-            if (p == Conversa.GetPergunta(0))
-            {
-                //Fim
+                    p = Conversa.UltimaPergunta();
+                }
+                if (p == Conversa.GetPergunta(0))
+                {
+                    //Fim
+
+                    await Bot.SendTextMessageAsync(
+                                mensagem.Chat.Id,
+                                Conversa.FazerPergunta(p),
+                         replyMarkup: new ReplyKeyboardRemove());
+                    return;
+                }
+
+                if (p == Conversa.GetPergunta(1))
+                {
+                    ReplyKeyboard = new ReplyKeyboardMarkup
+                    {
+
+                        Keyboard = new KeyboardButton[][] {
+                                    new KeyboardButton[]
+                                     {
+                                      new KeyboardButton("Sim"),
+                                      new KeyboardButton("Não")
+
+                                    }
+                                }
+                    };
+                }
+                if (p == Conversa.GetPergunta(2))
+                {
+                    ReplyKeyboard = new ReplyKeyboardMarkup
+                    {
+
+                        Keyboard = new KeyboardButton[][] {
+                                    new KeyboardButton[]
+                                     {
+                                         new KeyboardButton("Frango"),
+                                         new KeyboardButton("Moderado"),
+                                        new KeyboardButton("Monstro"),
+                                    }
+                                }
+                    };
+                }
+
 
                 await Bot.SendTextMessageAsync(
                             mensagem.Chat.Id,
                             Conversa.FazerPergunta(p),
-                     replyMarkup: new ReplyKeyboardRemove());
-                return;
+                            replyMarkup: ReplyKeyboard);
+
+                if (p == Conversa.GetPergunta(3) || p == Conversa.GetPergunta(4) || p == Conversa.GetPergunta(5))
+                {
+                    noTreino = true;
+                    if (p == Conversa.GetPergunta(3))
+                    {
+                        TreinoAtivo = "Frango";
+                    }
+                    if (p == Conversa.GetPergunta(4))
+                    {
+                        TreinoAtivo = "Moderado";
+                    }
+                    if (p == Conversa.GetPergunta(5))
+                    {
+                        TreinoAtivo = "Monstro";
+                    }
+                }
+
             }
 
-            if (p == Conversa.GetPergunta(1))
+            if (noTreino)
             {
+                // Treino
+                if ((MaxqtdTreino != 0 && qtdTreino == MaxqtdTreino) || mensagem.Text == "Não")
+                {
+                    // acabou treino
+                    await Bot.SendTextMessageAsync(
+                          mensagem.Chat.Id,
+                          "Treino acabou, bom trabalho!",
+                           replyMarkup: new ReplyKeyboardRemove());
+                    Conversa.Limpar();
+                    qtdTreino = 0;
+                    MaxqtdTreino = 0;
+                    noTreino = false;
+                    return;
+
+                }
+
+                StringBuilder sb = new StringBuilder();
+                if (TreinoAtivo == "Frango")
+                {
+                    //Frango   
+                    TreinoFrango t = new TreinoFrango();
+
+                    sb.AppendLine(t.Nome);
+                    sb.AppendLine("Atividade:");
+                    MaxqtdTreino = t.Atividades.Count;
+                    var ativ = t.Atividades[qtdTreino];
+                    sb.AppendLine(String.Format("{0}, ({1})", ativ.Nome, ativ.TipoAtividade));
+                    sb.AppendLine(String.Format("Aparelho: {0}", ativ.Aparelho.Nome));
+
+                }
+                if (TreinoAtivo == "Moderado")
+                {
+                    //Moderado
+                    TreinoModerado t = new TreinoModerado();
+
+                    sb.AppendLine(t.Nome);
+                    sb.AppendLine("Atividade:");
+                    MaxqtdTreino = t.Atividades.Count;
+                    var ativ = t.Atividades[qtdTreino];
+                    sb.AppendLine(String.Format("{0}, ({1})", ativ.Nome, ativ.TipoAtividade));
+                    sb.AppendLine(String.Format("Aparelho: {0}", ativ.Aparelho.Nome));
+                }
+                if (TreinoAtivo == "Monstro")
+                {
+                    //Monstro
+                    TreinoMonstro t = new TreinoMonstro();
+
+                    sb.AppendLine(t.Nome);
+                    sb.AppendLine("Atividade:");
+                    MaxqtdTreino = t.Atividades.Count;
+                    var ativ = t.Atividades[qtdTreino];
+                    sb.AppendLine(String.Format("{0}, ({1})", ativ.Nome, ativ.TipoAtividade));
+                    sb.AppendLine(String.Format("Aparelho: {0}", ativ.Aparelho.Nome));
+                }
+                qtdTreino++;
+                sb.AppendLine("");
+                sb.AppendLine("");
+                sb.AppendLine("Quer outro?");
+
                 ReplyKeyboard = new ReplyKeyboardMarkup
                 {
 
@@ -84,28 +206,13 @@ namespace PersonalBotTelegram
                                     }
                                 }
                 };
+
+                await Bot.SendTextMessageAsync(
+                         mensagem.Chat.Id,
+                         (sb.ToString()),
+                         replyMarkup: ReplyKeyboard);
+
             }
-            if (p == Conversa.GetPergunta(2))
-            {
-                ReplyKeyboard = new ReplyKeyboardMarkup
-                {
-
-                    Keyboard = new KeyboardButton[][] {
-                                    new KeyboardButton[]
-                                     {
-                                         new KeyboardButton("Frango"),
-                                         new KeyboardButton("Moderado"),
-                                        new KeyboardButton("Monstro"),
-                                    }
-                                }
-                };
-            }
-
-            await Bot.SendTextMessageAsync(
-                        mensagem.Chat.Id,
-                        Conversa.FazerPergunta(p),
-                        replyMarkup: ReplyKeyboard);
-
 
         }
 
