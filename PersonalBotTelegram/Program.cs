@@ -14,12 +14,15 @@ namespace PersonalBotTelegram
 {
     class Program
     {
-        private static readonly TelegramBotClient Bot = new TelegramBotClient("581796064:AAEN11t28iX4yJvnNs1aBY86Cejjed9i2dM");
+        private static readonly TelegramBotClient Bot = new TelegramBotClient("595916691:AAESlpQXvxWy8zkwb65_mx-Nf878FPWRqTk");
        // private static BotOrquestrador BotStatus = new BotOrquestrador();
         public static bool noTreino = false;
         public static int qtdTreino = 0;
         public static int MaxqtdTreino = 0;
         public static string TreinoAtivo = "";
+
+        public static Fluxo fluxo = new Fluxo();
+
 
 
         static void Main(string[] args)
@@ -49,172 +52,217 @@ namespace PersonalBotTelegram
             //verifica se a mensagem é texto
             if (mensagem == null || mensagem.Type != MessageType.TextMessage) return;
 
-            ReplyKeyboardMarkup ReplyKeyboard = new ReplyKeyboardMarkup();
+            //ReplyKeyboardMarkup ReplyKeyboard = new ReplyKeyboardMarkup();
+
+            if(!fluxo.Inicio)
+                fluxo.MudarPasso(fluxo.Atual, mensagem.Text.Split(' ').First());
+
+            //iniciar fluxo
+
+
+            var fluxoAux = fluxo.Atual;
+
+
+            var rkm = new ReplyKeyboardMarkup();
+            var rows = new List<KeyboardButton[]>();
+            var cols = new List<KeyboardButton>();
+            for (var Index = 0; Index < fluxoAux.Opcoes.Count; Index++)
+            {
+                cols.Add(new KeyboardButton("" + fluxoAux.Opcoes[Index].Nome));
+                //if (Index % 4 != 0) continue;
+                rows.Add(cols.ToArray());
+                cols = new List<KeyboardButton>();
+            }
+            rkm.Keyboard = rows.ToArray();
+
+
+            await Bot.SendTextMessageAsync(
+                            mensagem.Chat.Id,
+                            fluxoAux.Pergunta,
+                            replyMarkup: rkm);
+
+            //mudar de passo
+            fluxo.Inicio = false;
+
+
             //await Bot.SendTextMessageAsync(e.Message.Chat.Id, BotStatus.Etapa);
 
 
-            if (!noTreino)
-            {
-                string p = Conversa.MapaPergunta();
-                if (p == Conversa.GetPergunta(-1))
-                {
-                    //resposta invalida
-                    await Bot.SendTextMessageAsync(
-                           mensagem.Chat.Id,
-                           p,
-                           replyMarkup: new ReplyKeyboardRemove());
-
-                    p = Conversa.UltimaPergunta();
-                }
-                if (p == Conversa.GetPergunta(0))
-                {
-                    //Fim
-
-                    await Bot.SendTextMessageAsync(
-                                mensagem.Chat.Id,
-                                Conversa.FazerPergunta(p),
-                         replyMarkup: new ReplyKeyboardRemove());
-                    return;
-                }
-
-                if (p == Conversa.GetPergunta(1))
-                {
-                    ReplyKeyboard = new ReplyKeyboardMarkup
-                    {
-
-                        Keyboard = new KeyboardButton[][] {
-                                    new KeyboardButton[]
-                                     {
-                                      new KeyboardButton("Sim"),
-                                      new KeyboardButton("Não")
-
-                                    }
-                                }
-                    };
-                }
-                if (p == Conversa.GetPergunta(2))
-                {
-                    ReplyKeyboard = new ReplyKeyboardMarkup
-                    {
-
-                        Keyboard = new KeyboardButton[][] {
-                                    new KeyboardButton[]
-                                     {
-                                         new KeyboardButton("Frango"),
-                                         new KeyboardButton("Moderado"),
-                                        new KeyboardButton("Monstro"),
-                                    }
-                                }
-                    };
-                }
-
-
-                await Bot.SendTextMessageAsync(
-                            mensagem.Chat.Id,
-                            Conversa.FazerPergunta(p),
-                            replyMarkup: ReplyKeyboard);
-
-                if (p == Conversa.GetPergunta(3) || p == Conversa.GetPergunta(4) || p == Conversa.GetPergunta(5))
-                {
-                    noTreino = true;
-                    if (p == Conversa.GetPergunta(3))
-                    {
-                        TreinoAtivo = "Frango";
-                    }
-                    if (p == Conversa.GetPergunta(4))
-                    {
-                        TreinoAtivo = "Moderado";
-                    }
-                    if (p == Conversa.GetPergunta(5))
-                    {
-                        TreinoAtivo = "Monstro";
-                    }
-                }
-
-            }
-
-            if (noTreino)
-            {
-                // Treino
-                if ((MaxqtdTreino != 0 && qtdTreino == MaxqtdTreino) || mensagem.Text == "Não")
-                {
-                    // acabou treino
-                    await Bot.SendTextMessageAsync(
-                          mensagem.Chat.Id,
-                          "Treino acabou, bom trabalho!",
-                           replyMarkup: new ReplyKeyboardRemove());
-                    Conversa.Limpar();
-                    qtdTreino = 0;
-                    MaxqtdTreino = 0;
-                    noTreino = false;
-                    return;
-
-                }
-
-                StringBuilder sb = new StringBuilder();
-                if (TreinoAtivo == "Frango")
-                {
-                    //Frango   
-                    TreinoFrango t = new TreinoFrango();
-
-                    sb.AppendLine(t.Nome);
-                    sb.AppendLine("Atividade:");
-                    MaxqtdTreino = t.Atividades.Count;
-                    var ativ = t.Atividades[qtdTreino];
-                    sb.AppendLine(String.Format("{0}, ({1})", ativ.Nome, ativ.TipoAtividade));
-                    sb.AppendLine(String.Format("Aparelho: {0}", ativ.Aparelho.Nome));
-
-                }
-                if (TreinoAtivo == "Moderado")
-                {
-                    //Moderado
-                    TreinoModerado t = new TreinoModerado();
-
-                    sb.AppendLine(t.Nome);
-                    sb.AppendLine("Atividade:");
-                    MaxqtdTreino = t.Atividades.Count;
-                    var ativ = t.Atividades[qtdTreino];
-                    sb.AppendLine(String.Format("{0}, ({1})", ativ.Nome, ativ.TipoAtividade));
-                    sb.AppendLine(String.Format("Aparelho: {0}", ativ.Aparelho.Nome));
-                }
-                if (TreinoAtivo == "Monstro")
-                {
-                    //Monstro
-                    TreinoMonstro t = new TreinoMonstro();
-
-                    sb.AppendLine(t.Nome);
-                    sb.AppendLine("Atividade:");
-                    MaxqtdTreino = t.Atividades.Count;
-                    var ativ = t.Atividades[qtdTreino];
-                    sb.AppendLine(String.Format("{0}, ({1})", ativ.Nome, ativ.TipoAtividade));
-                    sb.AppendLine(String.Format("Aparelho: {0}", ativ.Aparelho.Nome));
-                }
-                qtdTreino++;
-                sb.AppendLine("");
-                sb.AppendLine("");
-                sb.AppendLine("Quer outro?");
-
-                ReplyKeyboard = new ReplyKeyboardMarkup
-                {
-
-                    Keyboard = new KeyboardButton[][] {
-                                    new KeyboardButton[]
-                                     {
-                                      new KeyboardButton("Sim"),
-                                      new KeyboardButton("Não")
-
-                                    }
-                                }
-                };
-
-                await Bot.SendTextMessageAsync(
-                         mensagem.Chat.Id,
-                         (sb.ToString()),
-                         replyMarkup: ReplyKeyboard);
-
-            }
-
         }
+
+        //private static async void OnMessage(object sender, MessageEventArgs e)
+        //{
+        //    var mensagem = e.Message;
+        //    Conversa.RespostaRecebida(mensagem.Text);
+        //    //verifica se a mensagem é texto
+        //    if (mensagem == null || mensagem.Type != MessageType.TextMessage) return;
+
+        //    ReplyKeyboardMarkup ReplyKeyboard = new ReplyKeyboardMarkup();
+        //    //await Bot.SendTextMessageAsync(e.Message.Chat.Id, BotStatus.Etapa);
+
+
+        //    if (!noTreino)
+        //    {
+        //        string p = Conversa.MapaPergunta();
+        //        if (p == Conversa.GetPergunta(-1))
+        //        {
+        //            //resposta invalida
+        //            await Bot.SendTextMessageAsync(
+        //                   mensagem.Chat.Id,
+        //                   p,
+        //                   replyMarkup: new ReplyKeyboardRemove());
+
+        //            p = Conversa.UltimaPergunta();
+        //        }
+        //        if (p == Conversa.GetPergunta(0))
+        //        {
+        //            //Fim
+
+        //            await Bot.SendTextMessageAsync(
+        //                        mensagem.Chat.Id,
+        //                        Conversa.FazerPergunta(p),
+        //                 replyMarkup: new ReplyKeyboardRemove());
+        //            return;
+        //        }
+
+        //        if (p == Conversa.GetPergunta(1))
+        //        {
+        //            ReplyKeyboard = new ReplyKeyboardMarkup
+        //            {
+
+        //                Keyboard = new KeyboardButton[][] {
+        //                            new KeyboardButton[]
+        //                             {
+        //                              new KeyboardButton("Sim"),
+        //                              new KeyboardButton("Não")
+
+        //                            }
+        //                        }
+        //            };
+        //        }
+        //        if (p == Conversa.GetPergunta(2))
+        //        {
+        //            ReplyKeyboard = new ReplyKeyboardMarkup
+        //            {
+
+        //                Keyboard = new KeyboardButton[][] {
+        //                            new KeyboardButton[]
+        //                             {
+        //                                 new KeyboardButton("Frango"),
+        //                                 new KeyboardButton("Moderado"),
+        //                                new KeyboardButton("Monstro"),
+        //                            }
+        //                        }
+        //            };
+        //        }
+
+
+        //        await Bot.SendTextMessageAsync(
+        //                    mensagem.Chat.Id,
+        //                    Conversa.FazerPergunta(p),
+        //                    replyMarkup: ReplyKeyboard);
+
+        //        if (p == Conversa.GetPergunta(3) || p == Conversa.GetPergunta(4) || p == Conversa.GetPergunta(5))
+        //        {
+        //            noTreino = true;
+        //            if (p == Conversa.GetPergunta(3))
+        //            {
+        //                TreinoAtivo = "Frango";
+        //            }
+        //            if (p == Conversa.GetPergunta(4))
+        //            {
+        //                TreinoAtivo = "Moderado";
+        //            }
+        //            if (p == Conversa.GetPergunta(5))
+        //            {
+        //                TreinoAtivo = "Monstro";
+        //            }
+        //        }
+
+        //    }
+
+        //    if (noTreino)
+        //    {
+        //        // Treino
+        //        if ((MaxqtdTreino != 0 && qtdTreino == MaxqtdTreino) || mensagem.Text == "Não")
+        //        {
+        //            // acabou treino
+        //            await Bot.SendTextMessageAsync(
+        //                  mensagem.Chat.Id,
+        //                  "Treino acabou, bom trabalho!",
+        //                   replyMarkup: new ReplyKeyboardRemove());
+        //            Conversa.Limpar();
+        //            qtdTreino = 0;
+        //            MaxqtdTreino = 0;
+        //            noTreino = false;
+        //            return;
+
+        //        }
+
+        //        StringBuilder sb = new StringBuilder();
+        //        if (TreinoAtivo == "Frango")
+        //        {
+        //            //Frango   
+        //            TreinoFrango t = new TreinoFrango();
+
+        //            sb.AppendLine(t.Nome);
+        //            sb.AppendLine("Atividade:");
+        //            MaxqtdTreino = t.Atividades.Count;
+        //            var ativ = t.Atividades[qtdTreino];
+        //            sb.AppendLine(String.Format("{0}, ({1})", ativ.Nome, ativ.TipoAtividade));
+        //            sb.AppendLine(String.Format("Aparelho: {0}", ativ.Aparelho.Nome));
+
+        //        }
+        //        if (TreinoAtivo == "Moderado")
+        //        {
+        //            //Moderado
+        //            TreinoModerado t = new TreinoModerado();
+
+        //            sb.AppendLine(t.Nome);
+        //            sb.AppendLine("Atividade:");
+        //            MaxqtdTreino = t.Atividades.Count;
+        //            var ativ = t.Atividades[qtdTreino];
+        //            sb.AppendLine(String.Format("{0}, ({1})", ativ.Nome, ativ.TipoAtividade));
+        //            sb.AppendLine(String.Format("Aparelho: {0}", ativ.Aparelho.Nome));
+        //        }
+        //        if (TreinoAtivo == "Monstro")
+        //        {
+        //            //Monstro
+        //            TreinoMonstro t = new TreinoMonstro();
+
+        //            sb.AppendLine(t.Nome);
+        //            sb.AppendLine("Atividade:");
+        //            MaxqtdTreino = t.Atividades.Count;
+        //            var ativ = t.Atividades[qtdTreino];
+        //            sb.AppendLine(String.Format("{0}, ({1})", ativ.Nome, ativ.TipoAtividade));
+        //            sb.AppendLine(String.Format("Aparelho: {0}", ativ.Aparelho.Nome));
+        //        }
+        //        qtdTreino++;
+        //        sb.AppendLine("");
+        //        sb.AppendLine("");
+        //        sb.AppendLine("Quer outro?");
+
+        //        ReplyKeyboard = new ReplyKeyboardMarkup
+        //        {
+
+        //            Keyboard = new KeyboardButton[][] {
+        //                            new KeyboardButton[]
+        //                             {
+        //                              new KeyboardButton("Sim"),
+        //                              new KeyboardButton("Não")
+
+        //                            }
+        //                        }
+        //        };
+
+        //        await Bot.SendTextMessageAsync(
+        //                 mensagem.Chat.Id,
+        //                 (sb.ToString()),
+        //                 replyMarkup: ReplyKeyboard);
+
+        //    }
+
+        //}
 
         //private static async void OnMessage(object sender, MessageEventArgs e)
         //{
