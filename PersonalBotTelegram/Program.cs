@@ -21,7 +21,7 @@ namespace PersonalBotTelegram
         public static int MaxqtdTreino = 0;
         public static string TreinoAtivo = "";
 
-        public static Fluxo fluxo = new Fluxo();
+        public static Fluxo fluxo;
 
 
 
@@ -48,42 +48,54 @@ namespace PersonalBotTelegram
         private static async void OnMessage(object sender, MessageEventArgs e)
         {
             var mensagem = e.Message;
-            Conversa.RespostaRecebida(mensagem.Text);
+           // Conversa.RespostaRecebida(mensagem.Text);
             //verifica se a mensagem é texto
             if (mensagem == null || mensagem.Type != MessageType.TextMessage) return;
 
             //ReplyKeyboardMarkup ReplyKeyboard = new ReplyKeyboardMarkup();
 
-            if(!fluxo.Inicio)
+            if (fluxo != null)
                 fluxo.MudarPasso(fluxo.Atual, mensagem.Text.Split(' ').First());
+            else
+                fluxo = new Fluxo();
 
             //iniciar fluxo
 
 
             var fluxoAux = fluxo.Atual;
 
+            dynamic rkm = new ReplyKeyboardMarkup();
 
-            var rkm = new ReplyKeyboardMarkup();
-            var rows = new List<KeyboardButton[]>();
-            var cols = new List<KeyboardButton>();
-            for (var Index = 0; Index < fluxoAux.Opcoes.Count; Index++)
+
+            if (fluxoAux.Opcoes.Count > 0)
             {
-                cols.Add(new KeyboardButton("" + fluxoAux.Opcoes[Index].Nome));
-                //if (Index % 4 != 0) continue;
-                rows.Add(cols.ToArray());
-                cols = new List<KeyboardButton>();
+
+                rkm = new ReplyKeyboardMarkup();
+
+                var rows = new List<KeyboardButton[]>();
+                var cols = new List<KeyboardButton>();
+                for (var Index = 0; Index < fluxoAux.Opcoes.Count; Index++)
+                {
+                    cols.Add(new KeyboardButton("" + fluxoAux.Opcoes[Index].Nome));
+                    //if (Index % 4 != 0) continue;
+                    rows.Add(cols.ToArray());
+                    cols = new List<KeyboardButton>();
+                }
+                rkm.Keyboard = rows.ToArray();
+
+
+
             }
-            rkm.Keyboard = rows.ToArray();
+            else
+                rkm = new ReplyKeyboardRemove();
 
 
-            await Bot.SendTextMessageAsync(
+
+
+                    await Bot.SendTextMessageAsync(
                             mensagem.Chat.Id,
                             fluxoAux.Pergunta,
                             replyMarkup: rkm);
-
-            //mudar de passo
-            fluxo.Inicio = false;
-
 
             //await Bot.SendTextMessageAsync(e.Message.Chat.Id, BotStatus.Etapa);
 
