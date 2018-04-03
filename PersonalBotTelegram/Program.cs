@@ -15,7 +15,7 @@ namespace PersonalBotTelegram
     class Program
     {
         private static readonly TelegramBotClient Bot = new TelegramBotClient("581796064:AAEN11t28iX4yJvnNs1aBY86Cejjed9i2dM");
-        private static BotOrquestrador BotStatus = new BotOrquestrador();
+       // private static BotOrquestrador BotStatus = new BotOrquestrador();
         public static bool noTreino = false;
         public static int qtdTreino = 0;
         public static int MaxqtdTreino = 0;
