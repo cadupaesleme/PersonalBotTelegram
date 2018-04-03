@@ -15,7 +15,7 @@ namespace PersonalBotTelegram
     class Program
     {
         private static readonly TelegramBotClient Bot = new TelegramBotClient("595916691:AAESlpQXvxWy8zkwb65_mx-Nf878FPWRqTk");
-       // private static BotOrquestrador BotStatus = new BotOrquestrador();
+        // private static BotOrquestrador BotStatus = new BotOrquestrador();
         public static bool noTreino = false;
         public static int qtdTreino = 0;
         public static int MaxqtdTreino = 0;
@@ -48,20 +48,30 @@ namespace PersonalBotTelegram
         private static async void OnMessage(object sender, MessageEventArgs e)
         {
             var mensagem = e.Message;
-           // Conversa.RespostaRecebida(mensagem.Text);
+
             //verifica se a mensagem é texto
             if (mensagem == null || mensagem.Type != MessageType.TextMessage) return;
 
-            //ReplyKeyboardMarkup ReplyKeyboard = new ReplyKeyboardMarkup();
 
             if (fluxo != null)
+            {
                 fluxo.MudarPasso(fluxo.Atual, mensagem.Text.Split(' ').First());
+                if (fluxo.Atual.Nome == "Fim")
+                {
+                    await Bot.SendTextMessageAsync(
+                        mensagem.Chat.Id,
+                        fluxo.Atual.Pergunta,
+                        replyMarkup: new ReplyKeyboardRemove());
+
+                    fluxo = null;
+
+                    return;
+                }
+            }
+                 
             else
                 fluxo = new Fluxo();
-
-            //iniciar fluxo
-
-
+            
             var fluxoAux = fluxo.Atual;
 
             dynamic rkm = new ReplyKeyboardMarkup();
@@ -89,17 +99,13 @@ namespace PersonalBotTelegram
             else
                 rkm = new ReplyKeyboardRemove();
 
+            
 
-
-
-                    await Bot.SendTextMessageAsync(
-                            mensagem.Chat.Id,
-                            fluxoAux.Pergunta,
-                            replyMarkup: rkm);
-
-            //await Bot.SendTextMessageAsync(e.Message.Chat.Id, BotStatus.Etapa);
-
-
+            await Bot.SendTextMessageAsync(
+                    mensagem.Chat.Id,
+                    fluxoAux.Pergunta,
+                    replyMarkup: rkm);
+            
         }
 
         //private static async void OnMessage(object sender, MessageEventArgs e)

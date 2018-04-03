@@ -20,18 +20,67 @@ namespace PersonalBotTelegram.Entidades
     {
         public Passo Atual { get; set; }
         public long ChatId { get; set; }
-        public bool Inicio { get; set; }
 
         public Fluxo()
         {
-            this.Inicio = true;
-
             Atual = Iniciar();
 
 
         }
-        
-        
+
+
+        private Passo IniciarTreino(string treinoAux)
+        {
+            ITreino treino;
+
+            //gerar o treino
+            switch (treinoAux)
+            {
+                case "Frango":
+                    treino = new TreinoFrango();
+                    break;
+                case "Moderado":
+                    treino = new TreinoModerado();
+                    break;
+                case "Monstro":
+                    treino = new TreinoMonstro();
+                    break;
+                default:
+                    treino = null;
+                    break;
+            }
+
+            //pegas as atividades
+            Atividades atividades = new Atividades();            
+
+            //passo finalizar
+            Passo Final = new Passo { Id = Guid.NewGuid(), Nome = "Fim", Pergunta = "Ok preguiçoso!!" };
+
+
+            Passo inicialAtividade = new Passo { Id = Guid.NewGuid(), Nome = "Atividade", Pergunta = atividades.lista_atividades.FirstOrDefault().Nome };
+            
+            Opcao Atividade1 = new Opcao { Id = Guid.NewGuid(), Nome = "Próxima", Passo = inicialAtividade, ProximoPasso = MudarPassoTreino(inicialAtividade) };
+            Opcao Atividade2 = new Opcao { Id = Guid.NewGuid(), Nome = "Sair", Passo = inicialAtividade, ProximoPasso = Final };
+            inicialAtividade.Opcoes.Add(Atividade1);
+            inicialAtividade.Opcoes.Add(Atividade2);
+
+            return inicialAtividade;
+            //foreach (Atividade atividade in treino.Atividades)
+            //{
+                
+            //}
+        }
+
+        private Passo MudarPassoTreino(Passo Atual)
+        {
+
+            //muda o passo do treino ate acabar as atividades
+
+            return Atual;
+        }
+
+
+
         private Passo Iniciar()
         {
             //iniciar 
@@ -41,7 +90,7 @@ namespace PersonalBotTelegram.Entidades
             Passo EscolherModulo = new Passo { Id = Guid.NewGuid(), Nome = "EscolherModulo", Pergunta = "Legal, que tipo de treino você quer ?" };
 
             //passo finalizar
-            Passo Final = new Passo { Id = Guid.NewGuid(), Nome = "Inicio", Pergunta = "Ok preguiçoso!!" };
+            Passo Final = new Passo { Id = Guid.NewGuid(), Nome = "Fim", Pergunta = "Ok preguiçoso!!" };
 
             //opcoes iniciar
             Opcao Inicio1 = new Opcao { Id = Guid.NewGuid(), Nome = "Sim", Passo = Inicio, ProximoPasso = EscolherModulo };
@@ -51,9 +100,9 @@ namespace PersonalBotTelegram.Entidades
 
 
             //opcoes escolher modulo
-            Opcao EscolherModulo1 = new Opcao { Id = Guid.NewGuid(), Nome = "Frango", Passo = EscolherModulo, ProximoPasso = Final };
-            Opcao EscolherModulo2 = new Opcao { Id = Guid.NewGuid(), Nome = "Moderado", Passo = EscolherModulo, ProximoPasso = Final };
-            Opcao EscolherModulo3 = new Opcao { Id = Guid.NewGuid(), Nome = "Monstro", Passo = EscolherModulo, ProximoPasso = Final };
+            Opcao EscolherModulo1 = new Opcao { Id = Guid.NewGuid(), Nome = "Frango", Passo = EscolherModulo, ProximoPasso = IniciarTreino("Frango") };
+            Opcao EscolherModulo2 = new Opcao { Id = Guid.NewGuid(), Nome = "Moderado", Passo = EscolherModulo, ProximoPasso = IniciarTreino("Moderado") };
+            Opcao EscolherModulo3 = new Opcao { Id = Guid.NewGuid(), Nome = "Monstro", Passo = EscolherModulo, ProximoPasso = IniciarTreino("Monstro") };
             EscolherModulo.Opcoes.Add(EscolherModulo1);
             EscolherModulo.Opcoes.Add(EscolherModulo2);
             EscolherModulo.Opcoes.Add(EscolherModulo3);
@@ -66,7 +115,6 @@ namespace PersonalBotTelegram.Entidades
         public void MudarPasso(Passo Atual, string Escolhida)
         {
 
-            Inicio = false;
 
             //colocar as condicoes
             var NovoPasso = Atual.Opcoes.FirstOrDefault(op => op.Nome == Escolhida).ProximoPasso;
