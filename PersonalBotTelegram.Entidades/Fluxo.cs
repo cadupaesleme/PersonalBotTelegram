@@ -133,7 +133,7 @@ namespace PersonalBotTelegram.Entidades
             {
                 List<string> perguntas = new List<string>();
 
-                //Atual.Pergunta = Atual.Pergunta;
+                Atual.Pergunta = "Não entendi, " + Atual.Pergunta.Replace("Não entendi, ","");
                 this.Atual = Atual;
             }
         }
