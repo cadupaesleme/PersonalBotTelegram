@@ -1,9 +1,11 @@
 ﻿using PersonalBotTelegram.Entidades;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using Telegram.Bot;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types;
@@ -14,19 +16,26 @@ namespace PersonalBotTelegram
 {
     class Program
     {
-        private static readonly TelegramBotClient Bot = new TelegramBotClient("595916691:AAESlpQXvxWy8zkwb65_mx-Nf878FPWRqTk");
+        private static readonly TelegramBotClient Bot = new TelegramBotClient("595916691:AAFHnUS_gJrJIgafSwPKXio9ucsmE94CXTI");
         // private static BotOrquestrador BotStatus = new BotOrquestrador();
         public static bool noTreino = false;
         public static int qtdTreino = 0;
         public static int MaxqtdTreino = 0;
         public static string TreinoAtivo = "";
-
-        public static Fluxo fluxo;
-
-
-
+        public static IList<Usuario> Usuarios = new List<Usuario>();
+        public static Dictionary<long, DateTime> TimerIDs = new Dictionary<long, DateTime>();
+        Timer aTimer = new Timer();
+        public static List<Opcao>  OpcoesAtividade = new List<Opcao>(); 
         static void Main(string[] args)
         {
+
+            Usuarios = new List<Usuario>();
+
+            System.Timers.Timer aTimer = new System.Timers.Timer();
+            aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+            aTimer.Interval = 5000;
+            aTimer.Enabled = true;
+
             var bot = Bot.GetMeAsync().Result;
             Console.Title = bot.Username;
 
@@ -45,6 +54,55 @@ namespace PersonalBotTelegram
 
         }
 
+        private static async void OnTimedEvent(object source, ElapsedEventArgs e)
+        {
+
+            Dictionary<long, DateTime> timermanter = new Dictionary<long, DateTime>();
+
+            dynamic rkm = new ReplyKeyboardMarkup();
+
+
+            //rkm = new ReplyKeyboardRemove();
+
+            var rows = new List<KeyboardButton[]>();
+            var cols = new List<KeyboardButton>();
+            for (var Index = 0; Index < OpcoesAtividade.Count; Index++)
+            {
+                cols.Add(new KeyboardButton("" + OpcoesAtividade[Index].Nome));
+                //if (Index % 4 != 0) continue;
+                rows.Add(cols.ToArray());
+                cols = new List<KeyboardButton>();
+            }
+            rkm.Keyboard = rows.ToArray();
+
+
+            foreach (var item in TimerIDs)
+            {
+                var dataVerificacao = item.Value.AddSeconds(10);
+                if (DateTime.Now >= dataVerificacao)
+                {
+                    //TimerIDs.Remove(item.Key);
+                    //TimerIDs.Add(item.Key, DateTime.Now);
+                    //TimerIDs[item.Key] = DateTime.Now;
+                    
+                    await Bot.SendTextMessageAsync(
+                              item.Key,
+                              "Vamos PORRA!!!!!!",
+                              replyMarkup: rkm);
+
+                    timermanter.Add(item.Key,DateTime.Now);
+                }
+                else
+                {
+                    timermanter.Add(item.Key,item.Value);
+
+                }
+
+
+            }
+            TimerIDs = timermanter;
+        }
+
         private static async void OnMessage(object sender, MessageEventArgs e)
         {
             var mensagem = e.Message;
@@ -52,27 +110,26 @@ namespace PersonalBotTelegram
             //verifica se a mensagem é texto
             if (mensagem == null || mensagem.Type != MessageType.TextMessage) return;
 
+            Usuario Usuario;
 
-            if (fluxo != null)
+            if (Usuarios.FirstOrDefault(u => u.Chat == mensagem.Chat.Id) == null)
             {
-                fluxo.MudarPasso(fluxo.Atual, mensagem.Text.Split(' ').First());
-                if (fluxo.Atual.Nome == "Fim")
-                {
-                    await Bot.SendTextMessageAsync(
-                        mensagem.Chat.Id,
-                        fluxo.Atual.Pergunta,
-                        replyMarkup: new ReplyKeyboardRemove());
+                Usuarios.Add(new Usuario(mensagem.Chat.FirstName, mensagem.Chat.Id, new Fluxo()));
+                Usuario = Usuarios.FirstOrDefault(u => u.Chat == mensagem.Chat.Id);
 
-                    fluxo = null;
-
-                    return;
-                }
             }
-                 
             else
-                fluxo = new Fluxo();
-            
-            var fluxoAux = fluxo.Atual;
+            {
+                Usuario = Usuarios.FirstOrDefault(u => u.Chat == mensagem.Chat.Id);
+                Usuario.Fluxo.MudarPasso(Usuario.Fluxo.Atual, mensagem.Text.Split(' ').First());
+            }
+
+            var fluxoAux = Usuario.Fluxo.Atual;
+
+            if (fluxoAux.Nome == "Fim")
+            {
+                Usuarios.Remove(Usuario);
+            }
 
             dynamic rkm = new ReplyKeyboardMarkup();
 
@@ -99,282 +156,34 @@ namespace PersonalBotTelegram
             else
                 rkm = new ReplyKeyboardRemove();
 
-            
+            var aux = fluxoAux.Pergunta.Split('|');
 
-            await Bot.SendTextMessageAsync(
-                    mensagem.Chat.Id,
-                    fluxoAux.Pergunta,
-                    replyMarkup: rkm);
-            
+            if (aux.Count() > 1)
+            {
+
+                OpcoesAtividade = fluxoAux.Opcoes;
+                TimerIDs.Remove(e.Message.Chat.Id);
+                TimerIDs.Add(e.Message.Chat.Id,DateTime.Now);
+                var imagem = aux[1];
+                var FileUrl = Directory.GetCurrentDirectory() + @"\..\..\imagens\" + imagem.Replace("\r\n", "");
+                using (var stream = System.IO.File.Open(FileUrl, FileMode.Open))
+                {
+                    FileToSend fts = new FileToSend();
+                    fts.Content = stream;
+                    fts.Filename = FileUrl.Split('\\').Last();
+                    var test = await Bot.SendPhotoAsync(mensagem.Chat.Id, fts, fluxoAux.Pergunta.Split('|')[0],
+                        replyMarkup: rkm);
+                }
+            }
+            else
+            {
+                TimerIDs.Remove(e.Message.Chat.Id);
+                await Bot.SendTextMessageAsync(
+                        mensagem.Chat.Id,
+                        fluxoAux.Pergunta,
+                        replyMarkup: rkm);
+            }
         }
-
-        //private static async void OnMessage(object sender, MessageEventArgs e)
-        //{
-        //    var mensagem = e.Message;
-        //    Conversa.RespostaRecebida(mensagem.Text);
-        //    //verifica se a mensagem é texto
-        //    if (mensagem == null || mensagem.Type != MessageType.TextMessage) return;
-
-        //    ReplyKeyboardMarkup ReplyKeyboard = new ReplyKeyboardMarkup();
-        //    //await Bot.SendTextMessageAsync(e.Message.Chat.Id, BotStatus.Etapa);
-
-
-        //    if (!noTreino)
-        //    {
-        //        string p = Conversa.MapaPergunta();
-        //        if (p == Conversa.GetPergunta(-1))
-        //        {
-        //            //resposta invalida
-        //            await Bot.SendTextMessageAsync(
-        //                   mensagem.Chat.Id,
-        //                   p,
-        //                   replyMarkup: new ReplyKeyboardRemove());
-
-        //            p = Conversa.UltimaPergunta();
-        //        }
-        //        if (p == Conversa.GetPergunta(0))
-        //        {
-        //            //Fim
-
-        //            await Bot.SendTextMessageAsync(
-        //                        mensagem.Chat.Id,
-        //                        Conversa.FazerPergunta(p),
-        //                 replyMarkup: new ReplyKeyboardRemove());
-        //            return;
-        //        }
-
-        //        if (p == Conversa.GetPergunta(1))
-        //        {
-        //            ReplyKeyboard = new ReplyKeyboardMarkup
-        //            {
-
-        //                Keyboard = new KeyboardButton[][] {
-        //                            new KeyboardButton[]
-        //                             {
-        //                              new KeyboardButton("Sim"),
-        //                              new KeyboardButton("Não")
-
-        //                            }
-        //                        }
-        //            };
-        //        }
-        //        if (p == Conversa.GetPergunta(2))
-        //        {
-        //            ReplyKeyboard = new ReplyKeyboardMarkup
-        //            {
-
-        //                Keyboard = new KeyboardButton[][] {
-        //                            new KeyboardButton[]
-        //                             {
-        //                                 new KeyboardButton("Frango"),
-        //                                 new KeyboardButton("Moderado"),
-        //                                new KeyboardButton("Monstro"),
-        //                            }
-        //                        }
-        //            };
-        //        }
-
-
-        //        await Bot.SendTextMessageAsync(
-        //                    mensagem.Chat.Id,
-        //                    Conversa.FazerPergunta(p),
-        //                    replyMarkup: ReplyKeyboard);
-
-        //        if (p == Conversa.GetPergunta(3) || p == Conversa.GetPergunta(4) || p == Conversa.GetPergunta(5))
-        //        {
-        //            noTreino = true;
-        //            if (p == Conversa.GetPergunta(3))
-        //            {
-        //                TreinoAtivo = "Frango";
-        //            }
-        //            if (p == Conversa.GetPergunta(4))
-        //            {
-        //                TreinoAtivo = "Moderado";
-        //            }
-        //            if (p == Conversa.GetPergunta(5))
-        //            {
-        //                TreinoAtivo = "Monstro";
-        //            }
-        //        }
-
-        //    }
-
-        //    if (noTreino)
-        //    {
-        //        // Treino
-        //        if ((MaxqtdTreino != 0 && qtdTreino == MaxqtdTreino) || mensagem.Text == "Não")
-        //        {
-        //            // acabou treino
-        //            await Bot.SendTextMessageAsync(
-        //                  mensagem.Chat.Id,
-        //                  "Treino acabou, bom trabalho!",
-        //                   replyMarkup: new ReplyKeyboardRemove());
-        //            Conversa.Limpar();
-        //            qtdTreino = 0;
-        //            MaxqtdTreino = 0;
-        //            noTreino = false;
-        //            return;
-
-        //        }
-
-        //        StringBuilder sb = new StringBuilder();
-        //        if (TreinoAtivo == "Frango")
-        //        {
-        //            //Frango   
-        //            TreinoFrango t = new TreinoFrango();
-
-        //            sb.AppendLine(t.Nome);
-        //            sb.AppendLine("Atividade:");
-        //            MaxqtdTreino = t.Atividades.Count;
-        //            var ativ = t.Atividades[qtdTreino];
-        //            sb.AppendLine(String.Format("{0}, ({1})", ativ.Nome, ativ.TipoAtividade));
-        //            sb.AppendLine(String.Format("Aparelho: {0}", ativ.Aparelho.Nome));
-
-        //        }
-        //        if (TreinoAtivo == "Moderado")
-        //        {
-        //            //Moderado
-        //            TreinoModerado t = new TreinoModerado();
-
-        //            sb.AppendLine(t.Nome);
-        //            sb.AppendLine("Atividade:");
-        //            MaxqtdTreino = t.Atividades.Count;
-        //            var ativ = t.Atividades[qtdTreino];
-        //            sb.AppendLine(String.Format("{0}, ({1})", ativ.Nome, ativ.TipoAtividade));
-        //            sb.AppendLine(String.Format("Aparelho: {0}", ativ.Aparelho.Nome));
-        //        }
-        //        if (TreinoAtivo == "Monstro")
-        //        {
-        //            //Monstro
-        //            TreinoMonstro t = new TreinoMonstro();
-
-        //            sb.AppendLine(t.Nome);
-        //            sb.AppendLine("Atividade:");
-        //            MaxqtdTreino = t.Atividades.Count;
-        //            var ativ = t.Atividades[qtdTreino];
-        //            sb.AppendLine(String.Format("{0}, ({1})", ativ.Nome, ativ.TipoAtividade));
-        //            sb.AppendLine(String.Format("Aparelho: {0}", ativ.Aparelho.Nome));
-        //        }
-        //        qtdTreino++;
-        //        sb.AppendLine("");
-        //        sb.AppendLine("");
-        //        sb.AppendLine("Quer outro?");
-
-        //        ReplyKeyboard = new ReplyKeyboardMarkup
-        //        {
-
-        //            Keyboard = new KeyboardButton[][] {
-        //                            new KeyboardButton[]
-        //                             {
-        //                              new KeyboardButton("Sim"),
-        //                              new KeyboardButton("Não")
-
-        //                            }
-        //                        }
-        //        };
-
-        //        await Bot.SendTextMessageAsync(
-        //                 mensagem.Chat.Id,
-        //                 (sb.ToString()),
-        //                 replyMarkup: ReplyKeyboard);
-
-        //    }
-
-        //}
-
-        //private static async void OnMessage(object sender, MessageEventArgs e)
-        //{
-        //    var mensagem = e.Message;
-        //    Conversa.RespostaRecebida(mensagem.Text);
-        //    //verifica se a mensagem é texto
-        //    if (mensagem == null || mensagem.Type != MessageType.TextMessage) return;
-
-        //    //await Bot.SendTextMessageAsync(e.Message.Chat.Id, BotStatus.Etapa);
-
-        //    switch (mensagem.Text.ToLower().Split(' ').First())
-        //    {
-        //        case "oi":
-        //        case "ola":
-        //        case "olá":
-        //        case "/start":
-        //            // await Bot.SendTextMessageAsync(e.Message.Chat.Id, "Olá, tudo bem " + e.Message.Chat.FirstName + " ? Vamos malhar ?");
-        //            ReplyKeyboardMarkup ReplyKeyboard = new ReplyKeyboardMarkup
-        //            {
-
-        //                Keyboard = new KeyboardButton[][] {
-        //                    new KeyboardButton[]
-        //                     {
-        //                      new KeyboardButton("Sim"),
-        //                      new KeyboardButton("Não")
-
-        //                    }
-        //                }
-        //            };
-
-        //            BotStatus.Etapa = "/start";
-
-        //            await Bot.SendTextMessageAsync(
-        //                mensagem.Chat.Id,
-        //                Conversa.FazerPergunta("Olá, tudo bem " + e.Message.Chat.FirstName + " ? Vamos malhar ? "),
-        //                replyMarkup: ReplyKeyboard);
-        //            break;
-
-
-        //        case "sim":
-        //            // await Bot.SendTextMessageAsync(e.Message.Chat.Id, "Olá, tudo bem " + e.Message.Chat.FirstName + " ? Vamos malhar ?");
-
-
-        //            BotStatus.Etapa = "/start";
-
-        //            await Bot.SendTextMessageAsync(
-        //                mensagem.Chat.Id,
-        //                Conversa.FazerPergunta("Ok " + e.Message.Chat.FirstName + " ? Qual treino deseja ? "),
-        //                replyMarkup: new ReplyKeyboardMarkup
-        //                {
-
-        //                    Keyboard = new KeyboardButton[][] {
-        //                    new KeyboardButton[]
-        //                     {
-        //                      new KeyboardButton("Frango"),
-        //                      new KeyboardButton("Moderado"),
-        //                      new KeyboardButton("Monstro"),                           
-
-        //                    },
-
-        //                     new KeyboardButton[]
-        //                     {
-
-        //                     new KeyboardButton("Sair")
-        //                     }
-
-        //                }
-        //                });
-        //            break;
-
-
-        //        case "não":
-        //        case "sair":
-        //            await Bot.SendTextMessageAsync(
-        //                   mensagem.Chat.Id,
-        //                   "Ok " + e.Message.Chat.FirstName + ". Até mais preguiçoso!",
-        //                   replyMarkup: new ReplyKeyboardRemove());
-        //            Conversa.Limpar();
-        //            BotStatus.Etapa = "/erro";
-        //            break;
-
-
-        //        default:
-        //            //await Bot.SendTextMessageAsync(e.Message.Chat.Id, "Não entendi " + e.Message.Chat.FirstName + ". Pode repetir por favor ?");
-
-        //            await Bot.SendTextMessageAsync(
-        //               mensagem.Chat.Id,
-        //               "Não entendi " + e.Message.Chat.FirstName + ". Pode repetir por favor ? ",
-        //               replyMarkup: new ReplyKeyboardRemove());
-        //            BotStatus.Etapa = "/erro";
-
-        //            break;
-
-        //    }
-        //}
+        
     }
 }

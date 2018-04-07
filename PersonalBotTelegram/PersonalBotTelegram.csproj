@@ -61,5 +61,14 @@
       <Name>PersonalBotTelegram.Entidades</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="imagens\Abdominal.jpg" />
+    <Content Include="imagens\cadeira.jpg" />
+    <Content Include="imagens\leg.jpg" />
+    <Content Include="imagens\Lombar.jpg" />
+    <Content Include="imagens\Puxada.jpg" />
+    <Content Include="imagens\remada.jpg" />
+    <Content Include="imagens\supino.jpg" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

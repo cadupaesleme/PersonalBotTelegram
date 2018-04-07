@@ -43,6 +43,7 @@
     <Compile Include="Aparelho.cs" />
     <Compile Include="Atividade.cs" />
     <Compile Include="Conversa.cs" />
+    <Compile Include="Fluxo.cs" />
     <Compile Include="ITreino.cs" />
     <Compile Include="Opcao.cs" />
     <Compile Include="Passo.cs" />
@@ -50,6 +51,7 @@
     <Compile Include="TreinoFrango.cs" />
     <Compile Include="TreinoModerado.cs" />
     <Compile Include="TreinoMonstro.cs" />
+    <Compile Include="Usuario.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
