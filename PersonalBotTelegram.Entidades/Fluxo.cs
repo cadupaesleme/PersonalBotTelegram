@@ -10,14 +10,29 @@ namespace PersonalBotTelegram.Entidades
     {
         public Passo Atual { get; set; }
         public long ChatId { get; set; }
+        public IList<string> MensagensMotivacionais { get; set; }
 
         public Fluxo()
         {
             Atual = Iniciar();
 
+            MensagensMotivacionais = new List<string>();
+            MensagensMotivacionais.Add("Vamos PORRA !!");
+            MensagensMotivacionais.Add("BIRRL !!");
+            MensagensMotivacionais.Add("Anda logo {{usuario}}, torre suas calorias e não a minha paciência !!");
+            MensagensMotivacionais.Add("Dor é só uma palavra pra mim !!");
+            MensagensMotivacionais.Add("Assim vai morrer fraco !!");
+            MensagensMotivacionais.Add("Tá muito frango, tá na fisioterapia {{usuario}}?");
 
         }
 
+        public string SorteiaMensagemMotivacional()
+        {
+            Random rnd = new Random();
+            int r = rnd.Next(MensagensMotivacionais.Count);
+
+            return MensagensMotivacionais[r];
+        }
 
         private Passo IniciarTreino(string treinoAux)
         {
@@ -46,20 +61,18 @@ namespace PersonalBotTelegram.Entidades
             //passo finalizar
             Passo Final = new Passo { Id = Guid.NewGuid(), Nome = "Fim", Pergunta = "Ok preguiçoso!!" };
 
+            //inicia as atividades
             var ativ = atividades.MontarTreino(treinoAux);
             Passo inicialAtividade = new Passo { Id = Guid.NewGuid(), Nome = "Atividade", Pergunta = ativ[0], Perguntas = ativ };
 
-
+            //opcoes de cada atividae
             Opcao Atividade1 = new Opcao { Id = Guid.NewGuid(), Nome = "Próxima", Passo = inicialAtividade, ProximoPasso = inicialAtividade };
             Opcao Atividade2 = new Opcao { Id = Guid.NewGuid(), Nome = "Sair", Passo = inicialAtividade, ProximoPasso = Final };
             inicialAtividade.Opcoes.Add(Atividade1);
             inicialAtividade.Opcoes.Add(Atividade2);
 
             return inicialAtividade;
-            //foreach (Atividade atividade in treino.Atividades)
-            //{
-
-            //}
+         
         }
 
         private Passo MudarPassoTreino(Passo Atual)
@@ -77,13 +90,12 @@ namespace PersonalBotTelegram.Entidades
         private Passo Iniciar()
         {
             //iniciar 
-            Passo Inicio = new Passo { Id = Guid.NewGuid(), Nome = "Inicio", Pergunta = "Vamos Malhar ?" };
+            Passo Inicio = new Passo { Id = Guid.NewGuid(), Nome = "Inicio", Pergunta = "Vamos Malhar {{usuario}}?" };
 
             //escolher modulo
             Passo EscolherModulo = new Passo { Id = Guid.NewGuid(), Nome = "EscolherModulo", Pergunta = "Legal, que tipo de treino você quer ?" };
 
             //passo finalizar
-
             Passo Final = new Passo { Id = Guid.NewGuid(), Nome = "Fim", Pergunta = "Ok preguiçoso!!" };
 
             //opcoes iniciar

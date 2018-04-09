@@ -84,10 +84,14 @@ namespace PersonalBotTelegram
                     //TimerIDs.Remove(item.Key);
                     //TimerIDs.Add(item.Key, DateTime.Now);
                     //TimerIDs[item.Key] = DateTime.Now;
-                    
+
+                    //sorteia palavras motivacionais
+                    string msg = Usuarios.FirstOrDefault(a => a.Chat == item.Key).Fluxo.SorteiaMensagemMotivacional();
+                    msg = msg.Replace("{{usuario}}", Usuarios.FirstOrDefault(a => a.Chat == item.Key).Nome);
+
                     await Bot.SendTextMessageAsync(
                               item.Key,
-                              "Vamos PORRA!!!!!!",
+                              msg,
                               replyMarkup: rkm);
 
                     timermanter.Add(item.Key,DateTime.Now);
@@ -178,9 +182,14 @@ namespace PersonalBotTelegram
             else
             {
                 TimerIDs.Remove(e.Message.Chat.Id);
+                string msg = fluxoAux.Pergunta;
+
+                msg = msg.Replace("{{usuario}}", Usuario.Nome);
+
+
                 await Bot.SendTextMessageAsync(
                         mensagem.Chat.Id,
-                        fluxoAux.Pergunta,
+                        msg,
                         replyMarkup: rkm);
             }
         }
